@@ -5,8 +5,10 @@ from geometry_msgs.msg import Twist
 from std_srvs.srv import SetBool, SetBoolResponse
 from sensor_msgs.msg import Range
 
-# status
-busy = False
+# task status
+# 1 - takeoff
+# 2 - landing
+status = 0
 pub = None
 
 # subscribed data
@@ -19,69 +21,75 @@ def clbk_sonar(data):
     # process data
     height = data.range
 
-def service_landing(req):
-    # get global vars
-    global busy, pub, height
-
-    # define response
-    response = SetBoolResponse()
-
-    # busy
-    if busy:
-        print 'busy'
-        response.success = False
-        response.message = 'Drone is busy!'
-        return response
-
-    # not busy - perform task
-    rate = rospy.Rate(10)
-    print 'perform landing'
-    print height
-    busy = True
-    msg = Twist()
-    if height > 0.18:
-        msg.linear.z = -0.2
-        while height > 0.18:
-            print height
-            pub.publish(msg)
-            rate.sleep()
-
-    # stop
-    print 'stop'
-    msg.linear.z = 0
-    pub.publish(msg)
-    rate.sleep()
-
-    # return response
-    response.success = True
-    response.message = 'Landing performed successfully!'
-    busy = False
-    return response
-
 def service_takeoff(req):
     # get global vars
-    global busy, pub, height
+    global pub, height, status
 
     # define response
     response = SetBoolResponse()
 
-    # busy
-    if busy:
+    # busy or set task
+    if status is not 0:
         print 'busy'
         response.success = False
         response.message = 'Drone is busy!'
-        return response
+    else:
+        status = 1
+        response.success = True
+        response.message = 'Takeoff performed successfully!'
 
-    # not busy - perform task
+    # return response
+    return response
+
+def service_landing(req):
+    # get global vars
+    global pub, height, status
+
+    # define response
+    response = SetBoolResponse()
+
+    # busy or set task
+    if status is not 0:
+        print 'busy'
+        response.success = False
+        response.message = 'Drone is busy!'
+    else:
+        status = 2
+        response.success = True
+        response.message = 'Takeoff performed successfully!'
+
+    # return response
+    return response
+
+def perform_task():
+    # get global vars
+    global pub, height, status
+
+    # do nothing
+    if status is 0:
+        pass
+
+    # takeoff
+    if status is 1:
+        perform_takeoff()
+
+    # landing
+    if status is 2:
+        perform_landing()
+
+def perform_takeoff():
+    # get global vars
+    global pub, height, status
+
+    # define vars
     rate = rospy.Rate(10)
     print 'perform takeoff'
-    print height
-    busy = True
     msg = Twist()
+
+    # takeoff
     if height < 1.5:
         msg.linear.z = 0.2
         while height < 1.5:
-            print height
             pub.publish(msg)
             rate.sleep()
 
@@ -90,12 +98,30 @@ def service_takeoff(req):
     msg.linear.z = 0
     pub.publish(msg)
     rate.sleep()
+    status = 0
 
-    # return response
-    response.success = True
-    response.message = 'Takeoff performed successfully!'
-    busy = False
-    return response
+def perform_landing():
+    # get global vars
+    global pub, height, status
+
+    # define vars
+    rate = rospy.Rate(10)
+    print 'perform landing'
+    msg = Twist()
+
+    # landing
+    if height > 0.16:
+        msg.linear.z = -0.2
+        while height > 0.16:
+            pub.publish(msg)
+            rate.sleep()
+
+    # stop
+    print 'stop'
+    msg.linear.z = 0
+    pub.publish(msg)
+    rate.sleep()
+    status = 0
 
 def hector_services():
     # global vars
@@ -111,9 +137,7 @@ def hector_services():
     rospy.init_node('hector_services', anonymous=True)
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
-        # hello_str = "hello world %s" % rospy.get_time()
-        # rospy.loginfo(hello_str)
-        # pub.publish(hello_str)
+        perform_task()
         rate.sleep()
 
 if __name__ == '__main__':
