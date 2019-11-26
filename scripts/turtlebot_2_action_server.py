@@ -91,7 +91,7 @@ class WaypointActionClass(object):
                 print 'fix yaw'
                 self._state = 'fix yaw'
                 twist_msg = Twist()
-                twist_msg.angular.z = 0.7 if err_yaw > 0 else -0.7
+                twist_msg.angular.z = 0.5 if err_yaw > 0 else -0.5
                 self._pub_cmd_vel.publish(twist_msg)
             else:
                 # go to point
@@ -99,7 +99,8 @@ class WaypointActionClass(object):
                 self._state = 'go to point'
                 twist_msg = Twist()
                 twist_msg.linear.x = 0.6
-                twist_msg.angular.z = 0.2 if err_yaw > 0 else -0.2
+                twist_msg.angular.z = 0
+                # twist_msg.angular.z = 0.1 if err_yaw > 0 else -0.1
                 self._pub_cmd_vel.publish(twist_msg)
 
             # send feedback
