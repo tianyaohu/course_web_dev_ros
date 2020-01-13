@@ -10,6 +10,7 @@
 
     <group if="$(arg put_robot_in_world)">
         <include file="$(eval find(put_robot_in_world_package) + '/launch/' + put_robot_in_world_launch)">
+            <arg name="kinect_enabled" value="true"/>
         </include>
     </group>
 
