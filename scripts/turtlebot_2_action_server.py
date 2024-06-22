@@ -44,7 +44,7 @@ class WaypointActionClass(object):
         # topics
         self._pub_cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self._sub_odom = rospy.Subscriber('/odom', Odometry, self._clbk_odom)
-        print 'Action server started'
+        print ('Action server started')
 
     def _clbk_odom(self, msg):
         # position
@@ -60,7 +60,7 @@ class WaypointActionClass(object):
         self._yaw = euler[2]
 
     def goal_callback(self, goal):
-        print 'goal %s received' % str(goal)
+        print('goal %s received' % str(goal))
 
         # helper variables
         success = True
@@ -77,25 +77,25 @@ class WaypointActionClass(object):
             desired_yaw = math.atan2(self._des_pos.y - self._position.y, self._des_pos.x - self._position.x)
             err_yaw = desired_yaw - self._yaw
             err_pos = math.sqrt(pow(self._des_pos.y - self._position.y, 2) + pow(self._des_pos.x - self._position.x, 2))
-            print self._yaw
-            print desired_yaw
-            print err_yaw
+            print( self._yaw)
+            print (desired_yaw)
+            print (err_yaw)
             # logic goes here
             if self._as.is_preempt_requested():
                 # cancelled
-                print 'The goal has been cancelled/preempted'
+                print ('The goal has been cancelled/preempted')
                 self._as.set_preempted()
                 success = False
             elif math.fabs(err_yaw) > self._yaw_precision:
                 # fix yaw
-                print 'fix yaw'
+                print ('fix yaw')
                 self._state = 'fix yaw'
                 twist_msg = Twist()
                 twist_msg.angular.z = 0.5 if err_yaw > 0 else -0.5
                 self._pub_cmd_vel.publish(twist_msg)
             else:
                 # go to point
-                print 'go to point'
+                print ('go to point')
                 self._state = 'go to point'
                 twist_msg = Twist()
                 twist_msg.linear.x = 0.6
